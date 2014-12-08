@@ -30,6 +30,7 @@ public class MainActivity extends ActionBarActivity {
     Button btn;
     EditText edit;
     Location mLocation;
+    String mAddress;
     LocationManager mLocationManager;
 
     @Override
@@ -46,11 +47,12 @@ public class MainActivity extends ActionBarActivity {
         btn.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 String content = ((Button)v).getText().toString();
-                if (content.equals(getString(R.string.getloc))) {
+                if (edit.getText().toString().isEmpty()) {
                     mLocation = mLocationManager.getLastKnownLocation(mLocationManager.getAllProviders().get(0));
                     getAddress(btn);
                 } else {
-
+                    mAddress = edit.getText().toString();
+                    getLocation(btn);
                 }
             }
         });
@@ -184,6 +186,74 @@ public class MainActivity extends ActionBarActivity {
         }
     }
 
+    private class GetLocationTask extends
+            AsyncTask<String, Void, String> {
+        Context mContext;
+
+        public GetLocationTask(Context context) {
+            super();
+            mContext = context;
+        }
+
+        /**
+         * Get a Geocoder instance, get the latitude and longitude
+         * look up the address, and return it
+         *
+         * @return A string containing the address of the current
+         * location, or an empty string if no address can be found,
+         * or an error message
+         * @params params One or more Location objects
+         */
+        @Override
+        protected String doInBackground(String... params) {
+            Geocoder geocoder = new Geocoder(mContext, Locale.getDefault());
+            // Get the current location from the input parameter list
+            String addr = params[0];
+            // Create a list to contain the result address
+            List<Address> addresses = null;
+            try {
+                /*
+                 * Return 1 address.
+                 */
+                addresses = geocoder.getFromLocationName(addr, 1);
+            } catch (IOException e1) {
+                Log.e("LocationSampleActivity",
+                        "IO Exception in getFromLocationName()");
+                e1.printStackTrace();
+                return ("IO Exception trying to get address");
+            } catch (IllegalArgumentException e2) {
+                // Error message to post in the log
+                String errorString = "Illegal arguments " + addr
+                        + " passed to address service";
+                Log.e("LocationSampleActivity", errorString);
+                e2.printStackTrace();
+                return errorString;
+            }
+            // If the reverse geocode returned an address
+            if (addresses != null && addresses.size() > 0) {
+                // Get the first address
+                Address address = addresses.get(0);
+                String mloc;
+                mloc = "(" + address.getLatitude() + ", " + address.getLongitude() + ")";
+
+                return mloc;
+            } else {
+                return "No address found";
+            }
+        }
+        /**
+         * A method that's called once doInBackground() completes. Turn
+         * off the indeterminate activity indicator and set
+         * the text of the UI element that shows the address. If the
+         * lookup failed, display the error message.
+         */
+        @Override
+        protected void onPostExecute(String address) {
+            // Display the results of the lookup.
+            Log.d("CALL:", "To twitter to kalw to twitter to");
+        }
+    }
+
     /**
      * The "Get Address" button in the UI is defined with
      * android:onClick="getAddress". The method is invoked whenever the
@@ -207,6 +277,17 @@ public class MainActivity extends ActionBarActivity {
              */
             (new GetAddressTask(this)).execute(mLocation);
         }
+    }
+
+    public void getLocation(View v) {
+        /*
+         * Reverse geocoding is long-running and synchronous.
+         * Run it on a background thread.
+         * Pass the current location to the background task.
+         * When the task finishes,
+         * onPostExecute() displays the address.
+        */
+        (new GetLocationTask(this)).execute(mAddress);
     }
 
     private final LocationListener mLocationListener = new LocationListener() {
