@@ -20,6 +20,9 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.twitter.sdk.android.Twitter;
+import com.twitter.sdk.android.core.TwitterAuthConfig;
+import io.fabric.sdk.android.Fabric;
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
@@ -27,6 +30,10 @@ import java.util.Locale;
 
 
 public class MainActivity extends ActionBarActivity {
+
+    // Note: Your consumer key and secret should be obfuscated in your source code before shipping.
+    private static final String TWITTER_KEY = "<YOUR TWITTER KEY>";
+    private static final String TWITTER_SECRET = "<YOUR TWITTER SECRET>";
     Button btn;
     EditText edit;
     Location mLocation;
@@ -36,6 +43,10 @@ public class MainActivity extends ActionBarActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        final TwitterAuthConfig authConfig = new TwitterAuthConfig(TWITTER_KEY, TWITTER_SECRET);
+
+        Fabric.with(this, new Twitter(authConfig));
         setContentView(R.layout.activity_main);
 
         mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
