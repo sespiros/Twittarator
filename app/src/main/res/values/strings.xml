@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Twittarator</string>
+    <string name="action_settings">Settings</string>
+    <string name="getloc">Get my location</string>
+    <string name="gettweets">Get Tweets</string>
+
+</resources>
