@@ -9,7 +9,6 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Build;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -19,9 +18,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.twitter.sdk.android.Twitter;
@@ -34,20 +30,14 @@ import com.twitter.sdk.android.core.TwitterException;
 import com.twitter.sdk.android.core.models.Search;
 import com.twitter.sdk.android.core.models.Tweet;
 import com.twitter.sdk.android.core.services.SearchService;
-import com.twitter.sdk.android.core.services.StatusesService;
+import com.twitter.sdk.android.core.services.params.Geocode;
 import com.twitter.sdk.android.tweetui.CompactTweetView;
-import com.twitter.sdk.android.tweetui.LoadCallback;
-import com.twitter.sdk.android.tweetui.TweetUtils;
-import com.twitter.sdk.android.tweetui.TweetView;
 import com.twitter.sdk.android.tweetui.TweetViewFetchAdapter;
 
 import io.fabric.sdk.android.Fabric;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Locale;
 
 
@@ -61,13 +51,14 @@ public class MainActivity extends ListActivity {
     Location mLocation;
     String mAddress;
     LocationManager mLocationManager;
-    String test = "test";
 
     final TweetViewFetchAdapter adapter =
             new TweetViewFetchAdapter<CompactTweetView>(
                     MainActivity.this);
 
     List<Tweet> mTweets = new ArrayList<Tweet>();
+    TwitterApiClient twitterApiClient;
+    SearchService searchService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,26 +67,11 @@ public class MainActivity extends ListActivity {
         final TwitterAuthConfig authConfig = new TwitterAuthConfig(TWITTER_KEY, TWITTER_SECRET);
         Fabric.with(this, new Twitter(authConfig));
 
+        twitterApiClient = TwitterCore.getInstance().getApiClient();
+        searchService = twitterApiClient.getSearchService();
+
         setContentView(R.layout.activity_main);
         setListAdapter(adapter);
-
-        TwitterApiClient twitterApiClient = TwitterCore.getInstance().getApiClient();
-        SearchService searchService = twitterApiClient.getSearchService();
-
-        searchService.tweets(test, null, null, null, null, null, null, null, null, null,
-                new Callback<Search>() {
-                    @Override
-                    public void success(Result<Search> searchResult) {
-                        mTweets = searchResult.data.tweets;
-                        Toast.makeText(getApplicationContext(), "Fetched tweets successfully", Toast.LENGTH_SHORT).show();
-                        adapter.setTweets(mTweets);
-                    }
-
-                    @Override
-                    public void failure(TwitterException e) {
-                        Toast.makeText(getApplicationContext(), "Failed to find tweets", Toast.LENGTH_SHORT).show();
-                    }
-                });
 
         mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 30,
@@ -293,6 +269,7 @@ public class MainActivity extends ListActivity {
                 Address address = addresses.get(0);
                 String mloc;
                 mloc = "(" + address.getLatitude() + ", " + address.getLongitude() + ")";
+                searchTweets(address);
 
                 return mloc;
             } else {
@@ -370,4 +347,25 @@ public class MainActivity extends ListActivity {
 
         }
     };
+
+    private void searchTweets(Address address) {
+        Geocode geocode = new Geocode(
+                address.getLatitude(),
+                address.getLongitude(), 10, Geocode.Distance.KILOMETERS);
+
+        searchService.tweets("", geocode, null, null, null, 100, null, null, null, null,
+                new Callback<Search>() {
+                    @Override
+                    public void success(Result<Search> searchResult) {
+                        mTweets = searchResult.data.tweets;
+                        adapter.setTweets(mTweets);
+                        Toast.makeText(getApplicationContext(), "Fetched tweets successfully", Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void failure(TwitterException e) {
+                        Toast.makeText(getApplicationContext(), "Failed to find tweets", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
 }
