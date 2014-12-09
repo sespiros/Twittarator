@@ -30,6 +30,7 @@ import com.twitter.sdk.android.core.TwitterException;
 import com.twitter.sdk.android.core.models.Search;
 import com.twitter.sdk.android.core.models.Tweet;
 import com.twitter.sdk.android.core.services.SearchService;
+import com.twitter.sdk.android.core.services.StatusesService;
 import com.twitter.sdk.android.core.services.params.Geocode;
 import com.twitter.sdk.android.tweetui.CompactTweetView;
 import com.twitter.sdk.android.tweetui.TweetViewFetchAdapter;
@@ -92,7 +93,7 @@ public class MainActivity extends ListActivity {
         });
 
         edit = (EditText)findViewById(R.id.editText);
-        edit.addTextChangedListener(new TextWatcher(){
+        edit.addTextChangedListener(new TextWatcher() {
             public void afterTextChanged(Editable s) {
                 if (s.length() != 0)
                     btn.setText(R.string.gettweets);
@@ -221,7 +222,7 @@ public class MainActivity extends ListActivity {
     }
 
     private class GetLocationTask extends
-            AsyncTask<String, Void, String> {
+            AsyncTask<String, Void, Address> {
         Context mContext;
 
         public GetLocationTask(Context context) {
@@ -239,10 +240,11 @@ public class MainActivity extends ListActivity {
          * @params params One or more Location objects
          */
         @Override
-        protected String doInBackground(String... params) {
+        protected Address doInBackground(String... params) {
             Geocoder geocoder = new Geocoder(mContext, Locale.getDefault());
             // Get the current location from the input parameter list
             String addr = params[0];
+            Address address = new Address(Locale.ENGLISH);
             // Create a list to contain the result address
             List<Address> addresses = null;
             try {
@@ -254,27 +256,20 @@ public class MainActivity extends ListActivity {
                 Log.e("LocationSampleActivity",
                         "IO Exception in getFromLocationName()");
                 e1.printStackTrace();
-                return ("IO Exception trying to get address");
             } catch (IllegalArgumentException e2) {
                 // Error message to post in the log
                 String errorString = "Illegal arguments " + addr
                         + " passed to address service";
                 Log.e("LocationSampleActivity", errorString);
                 e2.printStackTrace();
-                return errorString;
             }
             // If the reverse geocode returned an address
             if (addresses != null && addresses.size() > 0) {
                 // Get the first address
-                Address address = addresses.get(0);
-                String mloc;
-                mloc = "(" + address.getLatitude() + ", " + address.getLongitude() + ")";
-                searchTweets(address);
-
-                return mloc;
-            } else {
-                return "No address found";
-            }
+                address = addresses.get(0);
+                return address;
+            } else
+                return address;
         }
         /**
          * A method that's called once doInBackground() completes. Turn
@@ -283,9 +278,9 @@ public class MainActivity extends ListActivity {
          * lookup failed, display the error message.
          */
         @Override
-        protected void onPostExecute(String address) {
+        protected void onPostExecute(Address address) {
             // Display the results of the lookup.
-            Log.d("CALL:", "To twitter to kalw to twitter to");
+            searchTweets(address);
         }
     }
 
@@ -353,7 +348,7 @@ public class MainActivity extends ListActivity {
                 address.getLatitude(),
                 address.getLongitude(), 10, Geocode.Distance.KILOMETERS);
 
-        searchService.tweets("", geocode, null, null, null, 100, null, null, null, null,
+        searchService.tweets("", geocode, null, null, null, 50, null, null, null, null,
                 new Callback<Search>() {
                     @Override
                     public void success(Result<Search> searchResult) {
@@ -365,6 +360,7 @@ public class MainActivity extends ListActivity {
                     @Override
                     public void failure(TwitterException e) {
                         Toast.makeText(getApplicationContext(), "Failed to find tweets", Toast.LENGTH_SHORT).show();
+                        Log.d("DEBUG:", e.getMessage().toString());
                     }
                 });
     }
