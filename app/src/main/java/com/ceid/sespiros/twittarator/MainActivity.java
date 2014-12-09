@@ -1,5 +1,6 @@
 package com.ceid.sespiros.twittarator;
 
+import android.app.ListActivity;
 import android.content.Context;
 import android.location.Address;
 import android.location.Geocoder;
@@ -18,18 +19,39 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.twitter.sdk.android.Twitter;
+import com.twitter.sdk.android.core.Callback;
+import com.twitter.sdk.android.core.Result;
+import com.twitter.sdk.android.core.TwitterApiClient;
 import com.twitter.sdk.android.core.TwitterAuthConfig;
+import com.twitter.sdk.android.core.TwitterCore;
+import com.twitter.sdk.android.core.TwitterException;
+import com.twitter.sdk.android.core.models.Search;
+import com.twitter.sdk.android.core.models.Tweet;
+import com.twitter.sdk.android.core.services.SearchService;
+import com.twitter.sdk.android.core.services.StatusesService;
+import com.twitter.sdk.android.tweetui.CompactTweetView;
+import com.twitter.sdk.android.tweetui.LoadCallback;
+import com.twitter.sdk.android.tweetui.TweetUtils;
+import com.twitter.sdk.android.tweetui.TweetView;
+import com.twitter.sdk.android.tweetui.TweetViewFetchAdapter;
+
 import io.fabric.sdk.android.Fabric;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Locale;
 
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends ListActivity {
 
     // Note: Your consumer key and secret should be obfuscated in your source code before shipping.
     private static final String TWITTER_KEY = "<YOUR TWITTER KEY>";
@@ -39,18 +61,43 @@ public class MainActivity extends ActionBarActivity {
     Location mLocation;
     String mAddress;
     LocationManager mLocationManager;
+    String test = "test";
+
+    final TweetViewFetchAdapter adapter =
+            new TweetViewFetchAdapter<CompactTweetView>(
+                    MainActivity.this);
+
+    List<Tweet> mTweets = new ArrayList<Tweet>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         final TwitterAuthConfig authConfig = new TwitterAuthConfig(TWITTER_KEY, TWITTER_SECRET);
-
         Fabric.with(this, new Twitter(authConfig));
+
         setContentView(R.layout.activity_main);
+        setListAdapter(adapter);
+
+        TwitterApiClient twitterApiClient = TwitterCore.getInstance().getApiClient();
+        SearchService searchService = twitterApiClient.getSearchService();
+
+        searchService.tweets(test, null, null, null, null, null, null, null, null, null,
+                new Callback<Search>() {
+                    @Override
+                    public void success(Result<Search> searchResult) {
+                        mTweets = searchResult.data.tweets;
+                        Toast.makeText(getApplicationContext(), "Fetched tweets successfully", Toast.LENGTH_SHORT).show();
+                        adapter.setTweets(mTweets);
+                    }
+
+                    @Override
+                    public void failure(TwitterException e) {
+                        Toast.makeText(getApplicationContext(), "Failed to find tweets", Toast.LENGTH_SHORT).show();
+                    }
+                });
 
         mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-
         mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 30,
                 100, mLocationListener);
 
