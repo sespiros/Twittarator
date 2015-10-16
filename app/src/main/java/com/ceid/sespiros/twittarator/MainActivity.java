@@ -47,6 +47,7 @@ public class MainActivity extends ListActivity {
     // Note: Your consumer key and secret should be obfuscated in your source code before shipping.
     private static final String TWITTER_KEY = "<YOUR TWITTER KEY>";
     private static final String TWITTER_SECRET = "<YOUR TWITTER SECRET>";
+
     Button btn;
     EditText edit;
     Location mLocation;
@@ -66,6 +67,7 @@ public class MainActivity extends ListActivity {
         super.onCreate(savedInstanceState);
 
         final TwitterAuthConfig authConfig = new TwitterAuthConfig(TWITTER_KEY, TWITTER_SECRET);
+
         Fabric.with(this, new Twitter(authConfig));
 
         twitterApiClient = TwitterCore.getInstance().getApiClient();
